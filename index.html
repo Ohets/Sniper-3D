@@ -154,7 +154,7 @@ function createTarget(x,y,z,index){
  part(new THREE.BoxGeometry(.22,.18,.16),vest,.19,.48,.115);
  // Combat trousers / waist and torso with plate carrier
  part(new THREE.CylinderGeometry(.26,.3,.2,8),camo,0,.83,0);
- part(new THREE.BoxGeometry(.59,.75,.34),camo,0,1.28,0);
+ const torso=part(new THREE.BoxGeometry(.59,.75,.34),camo,0,1.28,0);g.userData.torso=torso;
  part(new THREE.BoxGeometry(.52,.54,.37),vest,0,1.31,.035);
  // Tactical pouches, straps and shoulder pads
  for(let side of [-1,1]){
@@ -189,10 +189,10 @@ function createTarget(x,y,z,index){
 }
 function spawnTargets(){
  clearTargets();const n=missions[currentMission][1].match(/\d+/)?parseInt(missions[currentMission][1].match(/\d+/)[0],10):3;
- for(let i=0;i<n;i++){const x=(i-(n-1)/2)*(1.7+Math.min(currentMission*.025,.6))+(Math.random()-.5)*1.2;const z=-24-Math.random()*45;const g=createTarget(x,0,z,i);g.position.x=x;g.position.y=0;g.userData.baseX=x;g.userData.move=(currentMission%3===2||currentMission%5===0)?1:0;g.userData.phase=Math.random()*6.28}
+ for(let i=0;i<n;i++){const x=(i-(n-1)/2)*(1.7+Math.min(currentMission*.025,.6))+(Math.random()-.5)*1.2;const z=-24-Math.random()*45;const g=createTarget(x,0,z,i);g.position.x=x;g.position.y=0;g.userData.baseX=x;g.userData.move=(currentMission%3===2||currentMission%5===0)?1:0;g.userData.phase=Math.random()*6.28;g.userData.facing=(Math.random()-.5)*.16}
  updateStats();
 }
-function animate(){requestAnimationFrame(animate);const dt=clock?clock.getDelta():0;if(gameActive){targetObjects.forEach((g)=>{if(g.userData.move)g.position.x=g.userData.baseX+Math.sin(performance.now()*.0007+g.userData.phase)*2.1});if(camera){camera.rotation.y=cameraYaw;camera.rotation.x=cameraPitch}}if(renderer&&scene&&camera)renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);const dt=clock?clock.getDelta():0;const t=performance.now()*.001;if(gameActive){targetObjects.forEach((g)=>{const phase=g.userData.phase||0;g.position.y=Math.sin(t*2.1+phase)*.025;if(g.userData.move)g.position.x=g.userData.baseX+Math.sin(t*.7+phase)*2.1;g.rotation.y=(g.userData.facing||0)+Math.sin(t*.85+phase)*.035;const torso=g.userData.torso;if(torso)torso.scale.y=1+Math.sin(t*2.1+phase)*.012});if(camera){camera.rotation.y=cameraYaw;camera.rotation.x=cameraPitch}}if(renderer&&scene&&camera)renderer.render(scene,camera)}
 function startMission(index){
  currentMission=Math.max(0,Math.min(39,index));hits=0;misses=0;shots=0;timeLeft=Math.max(38,72-currentMission)+Math.min(currentMission,12);ammo=weapons[equipped][4];gameActive=true;scopeOn=false;$('scopeOverlay').classList.remove('on');$('scopeBtn').textContent='◎ SCOPE';camera.fov=65;camera.updateProjectionMatrix();cameraYaw=0;cameraPitch=0;camera.position.set(0,3.2,13);sceneObjects.forEach(o=>scene.remove(o));sceneObjects=[];makeScenery();spawnTargets();showPanel(null);updateStats();$('hint').textContent='Drag to aim · Tap FIRE to shoot · SCOPE to zoom';clearInterval(timer);timer=setInterval(()=>{if(!gameActive)return;timeLeft--;updateStats();if(timeLeft<=0){timeLeft=0;endMission(false,'Time ran out. The targets escaped.')}else{$('missionDesc').textContent=missions[currentMission][2]+' Time: '+timeLeft+'s'}},1000);
 }
